@@ -153,7 +153,7 @@ iftag_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 			xtables_error(PARAMETER_PROBLEM,"iftag: bad use iif");
 		}
 		if(sscanf(v2,"%i-%i",&info->tag1,&info->tag2) == 2) {
-			if(!(info->op & XT_IFTAG_IN))
+			if((info->op & XT_IFTAG_OPMASK) != XT_IFTAG_IN)
 				xtables_error(PARAMETER_PROBLEM,"iftag: range without operator 'in'");
 			if(info->op & XT_IFTAG_MASK) {
 				if(info->tag1 & info->mask)
@@ -163,7 +163,7 @@ iftag_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
 			}
 		} else {
 			if(sscanf(v2,"%i",&info->tag1) == 1) {
-				if((info->op & XT_IFTAG_IN))
+				if((info->op & XT_IFTAG_OPMASK) == XT_IFTAG_IN)
 					xtables_error(PARAMETER_PROBLEM,"iftag: missing range value");
 				if(info->op & XT_IFTAG_MASK) {
 					if(info->tag1 & info->mask)
