@@ -9,6 +9,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/version.h>
 #include <linux/skbuff.h>
 
 #include <net/dst.h>
@@ -22,6 +23,11 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Vitaly Lavrov <vel21ripn@gnail.com>");
 MODULE_DESCRIPTION("Xtables: packet iftag operations");
+
+# if LINUX_VERSION_CODE < KERNEL_VERSION(4,11,0)
+# define xt_in(par)  par->in
+# define xt_out(par)  par->out
+#endif
 
 static inline __u32 get_in_if(const struct net_device *dev) {
 	if(!dev) return 0;
@@ -38,8 +44,8 @@ iftag_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	__u32 iiftag,oiftag,v1,v2;
 
 	bool ret = false;
-	iiftag = info->op & XT_IFTAG_IIF ? get_in_if(par->in):0;
-	oiftag = info->op & XT_IFTAG_OIF ? get_in_if(par->out):0;
+	iiftag = info->op & XT_IFTAG_IIF ? get_in_if(xt_in(par)):0;
+	oiftag = info->op & XT_IFTAG_OIF ? get_in_if(xt_out(par)):0;
 	v1 = 0; v2 = 0;
 	if((info->op & XT_IFTAG_IF) == XT_IFTAG_IF) {
 		v1 = iiftag; v2 = oiftag;
