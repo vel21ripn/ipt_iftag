@@ -1,6 +1,9 @@
 XTBL := $(shell pkg-config --variable=xtlibdir xtables)
 
 CFLAGS = -fPIC -I../kernel -g -Wall
+ifneq (z$(IPTINC),'z')
+	CFLAGS += -I$(IPTINC)
+endif
 
 all:  libipt_iftag.so
 install:  libipt_iftag.so
