@@ -2,8 +2,8 @@
 *.[ks]o
 *.o.cmd
 *.ko.cmd
+.cache.mk
 .tmp_versions
 Module.symvers
 ipt_iftag.mod.c
 modules.order
-

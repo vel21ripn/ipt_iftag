@@ -44,15 +44,20 @@ iftag_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	__u32 iiftag,oiftag,v1,v2;
 
 	bool ret = false;
-	iiftag = info->op & XT_IFTAG_IIF ? get_in_if(xt_in(par)):0;
-	oiftag = info->op & XT_IFTAG_OIF ? get_in_if(xt_out(par)):0;
+	iiftag = info->op & (XT_IFTAG_L_IIF|XT_IFTAG_R_IIF) ? get_in_if(xt_in(par)):0;
+	oiftag = info->op & (XT_IFTAG_L_OIF|XT_IFTAG_R_OIF) ? get_in_if(xt_out(par)):0;
 	v1 = 0; v2 = 0;
-	if((info->op & XT_IFTAG_IF) == XT_IFTAG_IF) {
-		v1 = iiftag; v2 = oiftag;
-	} else {
-		v1 = info->op & XT_IFTAG_IIF ? iiftag:oiftag;
-		v2 = info->tag1;
-	}
+	if(info->op & XT_IFTAG_L_IIF)
+		v1 = iiftag;
+	if(info->op & XT_IFTAG_L_OIF)
+		v1 = oiftag;
+
+	v2 = info->tag1;
+	if(info->op & XT_IFTAG_R_IIF)
+		v2 = iiftag;
+	if(info->op & XT_IFTAG_R_OIF)
+		v2 = oiftag;
+	
 	if(info->op & XT_IFTAG_MASK) {
 		v1 &= ~info->mask;
 		if((info->op & XT_IFTAG_OPMASK) != XT_IFTAG_IN)
@@ -89,26 +94,40 @@ iftag_mt_check_v0(const struct xt_mtchk_param *par)
 
 //	printk(KERN_INFO " op %x t1 %u t2 %u mask %u\n",
 //			info->op,info->tag1,info->tag2,info->mask);
+
         if ( (info->op & XT_IFTAG_OPMASK) == XT_IFTAG_IN &&
              info->tag1 > info->tag2)
                 return iftag_mt_errmsg("invalid range");
-        if (!(info->op & XT_IFTAG_IF))
-                return iftag_mt_errmsg("missing interface");
+        if (!(info->op & XT_IFTAG_L))
+                return iftag_mt_errmsg("missing left operand");
         if (!(info->op & XT_IFTAG_OP))
-                return iftag_mt_errmsg("no op");
-        if ((info->op & XT_IFTAG_MASK) && (info->op & XT_IFTAG_IF) != XT_IFTAG_IF) {
-		if(info->tag1 & info->mask) return iftag_mt_errmsg("val & mask != 0");
-		if((info->op & XT_IFTAG_OPMASK) == XT_IFTAG_IN &&
-				(info->tag2 & info->mask)) return iftag_mt_errmsg("val2 & mask != 0");
+                return iftag_mt_errmsg("missing operator");
+        if (info->op & XT_IFTAG_R) {
+		if(info->op & XT_IFTAG_L_IIF) {
+			if(info->op & XT_IFTAG_R_IIF)
+				return iftag_mt_errmsg("iif && iif");
+		} else {
+			if(info->op & XT_IFTAG_R_OIF)
+				return iftag_mt_errmsg("oif && oif");
+		}
+	}
+
+        if (info->op & XT_IFTAG_MASK) {
+        	if ((info->op & XT_IFTAG_OPMASK) == XT_IFTAG_IN)
+			return iftag_mt_errmsg("can't range and mask");
+		if(!(info->op & XT_IFTAG_R) && (info->tag1 & info->mask))
+			return iftag_mt_errmsg("val1 & mask != 0");
 	}
 	switch(par->hook_mask) {
 	case 1 << NF_INET_PRE_ROUTING:
 	case 1 << NF_INET_LOCAL_IN:
-		if(info->op & XT_IFTAG_OIF) return iftag_mt_errmsg("oif in prerouting/input");
+		if(info->op & (XT_IFTAG_L_OIF|XT_IFTAG_R_OIF)) 
+			return iftag_mt_errmsg("oif in prerouting/input");
 		break;
 	case 1 << NF_INET_POST_ROUTING:
 	case 1 << NF_INET_LOCAL_OUT:
-		if(info->op & XT_IFTAG_IIF) return iftag_mt_errmsg("iif in postrouting/output");
+		if(info->op & (XT_IFTAG_L_IIF|XT_IFTAG_R_IIF)) 
+			return iftag_mt_errmsg("iif in postrouting/output");
 		break;
 	}
         return 0;
@@ -126,19 +145,15 @@ static struct xt_match iftag_mt_reg __read_mostly = {
 static int __init iftag_mt_init(void)
 {
 int err;
-	printk(KERN_INFO "ipt_iftag loading..\n");
 	err = xt_register_match(&iftag_mt_reg);
 	if(err < 0) return err;
 
-	printk(KERN_INFO "ipt_iftag OK.\n");
 	return 0;
 }
 
 static void __exit iftag_mt_exit(void)
 {
-	printk(KERN_INFO "ipt_iftag unloading..\n");
 	xt_unregister_match(&iftag_mt_reg);
-	printk(KERN_INFO "ipt_iftag OK.\n");
 }
 
 module_init(iftag_mt_init);

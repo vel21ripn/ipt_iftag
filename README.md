@@ -10,7 +10,7 @@ Example:
 * vlan30 - connect to ISP1 (tag 32)
 * vlan31 - connection ISP2 (tag 40)
 
-`iptables -A FORWARD -m iftag --tag iif eq 0/7 -m iftag --tag oif eq 32/15 -j ACCEPT`
+`iptables -A FORWARD -m iftag --tag iif eq 0/7 -m iftag --tag oif in 32-40 -j ACCEPT`
 
 Enables forwarding of packets from vlan10-vlan16 through any ISP
 
