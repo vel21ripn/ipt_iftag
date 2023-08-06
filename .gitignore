@@ -2,6 +2,8 @@
 *.[ks]o
 *.o.cmd
 *.ko.cmd
+/kernel/*.mod
+/kernel/.*.cmd
 .cache.mk
 .tmp_versions
 Module.symvers

@@ -35,11 +35,11 @@ static const char *op_m1[4] = { "<", "==",">","in" };
 static const char *op_m2[4] = { "lt", "eq","gt","in" };
 
 static void 
-__iftag_mt4_save(const void *entry, const struct xt_entry_match *match,int mode)
+__iftag_mt4_save(__attribute__((unused)) const void *entry, const struct xt_entry_match *match,int mode)
 {
 	const struct xt_iftag_mtinfo *info = (const void *)match->data;
 	const char *vop;
-	char *v1,*v2,b[32],mask[32];
+	char *v1,*v2,b[22],mask[32];
 
 	b[0] = '\0';
 	mask[0] = '\0';
@@ -59,7 +59,7 @@ __iftag_mt4_save(const void *entry, const struct xt_entry_match *match,int mode)
 		     op_m2[(info->op & XT_IFTAG_OPMASK) >> 4];
 
 	if(mode) {
-	  char v1m[32],v2m[32];
+	  char v1m[32],v2m[48];
 	  if(info->op & XT_IFTAG_MASK) {
 		snprintf(v1m,sizeof(v1m)-1,"(%s & ~0x%x)",v1,info->mask);
 		v1 = v1m;
@@ -82,7 +82,7 @@ __iftag_mt4_save(entry,match,0);
 
 static void 
 iftag_mt4_print(const void *entry, const struct xt_entry_match *match,
-                  int numeric)
+                  __attribute__((unused)) int numeric)
 {
 __iftag_mt4_save(entry,match,1);
 }
@@ -130,7 +130,7 @@ static void parse_rpart(char *v2,
 	char *v2c = strchr(v2,'/');
 	if(v2c) {
 		*v2c++ = '\0';
-		if(sscanf(v2c,"%i",&info->mask) != 1)
+		if(sscanf(v2c,"%u",&info->mask) != 1)
 			xtables_error(PARAMETER_PROBLEM,"iftag: invalid mask");
 		info->op |= XT_IFTAG_MASK;
 	}
@@ -143,8 +143,8 @@ static void parse_rpart(char *v2,
 		if(info->op & XT_IFTAG_L_OIF)
 			xtables_error(PARAMETER_PROBLEM,"iftag: oif and oif");
 	} else {
-		if(sscanf(v2,"%i-%i",&info->tag1,&info->tag2) == 2 ||
-		   sscanf(v2,"%i:%i",&info->tag1,&info->tag2) == 2) {
+		if(sscanf(v2,"%u-%u",&info->tag1,&info->tag2) == 2 ||
+		   sscanf(v2,"%u:%u",&info->tag1,&info->tag2) == 2) {
 			if((info->op & XT_IFTAG_OPMASK) != XT_IFTAG_IN)
 				xtables_error(PARAMETER_PROBLEM,"iftag: range without operator 'in'");
 			if(info->op & XT_IFTAG_MASK)
@@ -158,7 +158,7 @@ static void parse_rpart(char *v2,
 			}
 				
 		} else {
-			if(sscanf(v2,"%i",&info->tag1) == 1) {
+			if(sscanf(v2,"%u",&info->tag1) == 1) {
 				if((info->op & XT_IFTAG_OPMASK) == XT_IFTAG_IN)
 					xtables_error(PARAMETER_PROBLEM,"iftag: missing range value");
 				if(info->op & XT_IFTAG_MASK) {
@@ -173,8 +173,8 @@ static void parse_rpart(char *v2,
 }
 
 static int 
-iftag_mt4_parse(int c, char **argv, int invert, unsigned int *flags,
-                  const void *entry, struct xt_entry_match **match)
+iftag_mt4_parse(__attribute__((unused)) int c, char **argv, int invert, unsigned int *flags,
+                  __attribute__((unused)) const void *entry, struct xt_entry_match **match)
 {
 	struct xt_iftag_mtinfo *info = (void *)(*match)->data;
 	char args[64];
@@ -235,7 +235,7 @@ static const struct option iftag_mt_opts[] = {
 };
 
 
-static void iftag_mt_init (struct xt_entry_match *match) {
+static void iftag_mt_init (__attribute__((unused)) struct xt_entry_match *match) {
 //	fprintf(stderr,"%s\n",__func__);
 }
 
